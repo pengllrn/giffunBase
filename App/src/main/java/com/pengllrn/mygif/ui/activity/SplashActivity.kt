@@ -7,7 +7,7 @@ import com.pengllrn.base.event.FinishActivityEvent
 import com.pengllrn.base.event.MessageEvent
 import com.pengllrn.base.extension.logWarn
 import com.pengllrn.base.model.Version
-import com.pengllrn.base.network.model.OriginThreadCallback
+import com.pengllrn.base.network.protocal.OriginThreadBaseCallback
 import com.pengllrn.base.ui.activity.BaseActivity
 import com.pengllrn.base.util.GlobalUtil
 import com.pengllrn.base.util.SharedUtil
@@ -85,7 +85,7 @@ class SplashActivity :BaseActivity() {
      * 开始向服务器发送初始化请求。
      */
     private fun startInitRequest() {
-        Init.getResponse(object : OriginThreadCallback {
+        Init.getResponse(object : OriginThreadBaseCallback {
             override fun onResponse(response: Response) {
                 if (activity == null) {
                     return

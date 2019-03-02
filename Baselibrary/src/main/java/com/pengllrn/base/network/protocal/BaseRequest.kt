@@ -17,11 +17,12 @@
 package com.pengllrn.base.network.protocal
 
 import com.google.gson.GsonBuilder
+import com.pengllrn.base.common.AppContext
 import com.pengllrn.base.common.NetworkConst
 import com.pengllrn.base.extension.logVerbose
 import com.pengllrn.base.network.exception.ResponseCodeException
-import com.pengllrn.base.network.model.OriginThreadCallback
 import com.pengllrn.base.network.request.LoggingInterceptor
+import com.pengllrn.base.util.AuthUtil
 import com.pengllrn.base.util.Utility
 import okhttp3.*
 import java.io.IOException
@@ -39,7 +40,7 @@ abstract class BaseRequest {
 
     private val okHttpBuilder: OkHttpClient.Builder = OkHttpClient.Builder().addNetworkInterceptor(LoggingInterceptor())
 
-    private var callback: Callback? = null
+    private var baseCallback: BaseCallback? = null
 
     private var params: Map<String, String>? = null
 
@@ -75,11 +76,11 @@ abstract class BaseRequest {
 
     /**
      * 设置响应回调接口
-     * @param callback
+     * @param baseCallback
      * 回调的实例
      */
-    fun setListener(callback: Callback?) {
-        this.callback = callback
+    fun setListener(baseCallback: BaseCallback?) {
+        this.baseCallback = baseCallback
     }
 
     /**
@@ -106,7 +107,7 @@ abstract class BaseRequest {
             @Throws(IOException::class)
             override fun onResponse(call: Call, response: Response) {
                 try {
-                    if (response.isSuccessful) {
+                    if (response.isSuccessful()) {
                         val body = response.body()
                         val result = if (body != null) {
                             body.string()
@@ -138,7 +139,7 @@ abstract class BaseRequest {
 
     abstract fun method(): Int
 
-    abstract fun listen(callback: Callback?)
+    abstract fun listen(baseCallback: BaseCallback?)
 
     /**
      * 构建和服务器身份认证相关的请求参数。
@@ -262,18 +263,18 @@ abstract class BaseRequest {
      * @param response
      * 服务器响应转换后的实体类
      */
-    private fun notifyResponse(response: com.quxianggif.network.model.Response) {
-        callback?.let {
-            if (it is OriginThreadCallback) {
+    private fun notifyResponse(response: BaseResponse) {
+        baseCallback?.let({
+            if (it is OriginThreadBaseCallback) {
                 it.onResponse(response)
-                callback = null
+                baseCallback = null
             } else {
-                GifFun.getHandler().post {
+                AppContext.getHandler().post {
                     it.onResponse(response)
-                    callback = null
+                    baseCallback = null
                 }
             }
-        }
+        })
     }
 
     /**
@@ -282,14 +283,14 @@ abstract class BaseRequest {
      * 请求响应的异常
      */
     private fun notifyFailure(e: Exception) {
-        callback?.let {
-            if (it is OriginThreadCallback) {
+        baseCallback?.let {
+            if (it is OriginThreadBaseCallback) {
                 it.onFailure(e)
-                callback = null
+                baseCallback = null
             } else {
-                GifFun.getHandler().post {
+                AppContext.getHandler().post {
                     it.onFailure(e)
-                    callback = null
+                    baseCallback = null
                 }
             }
         }
